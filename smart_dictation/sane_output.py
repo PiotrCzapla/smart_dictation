@@ -112,12 +112,13 @@ async def restore_clipboard(old_clipboard: dict, after: float = 0.5):
             log.warning("Error restoring clipboard: %s", str(e))
 
 
-def trigger_paste_with_pynput():
+async def trigger_paste_with_pynput():
     """Trigger cmd+v to paste, it is visible faster than using osascript"""
     command_key = Key.cmd if sys.platform == "darwin" else Key.ctrl
     keyboard = Controller()
     keyboard.press(command_key)
     keyboard.press("v")
+    await asyncio.sleep(0.01)
     keyboard.release("v")
     keyboard.release(command_key)
 
@@ -126,7 +127,7 @@ async def paste_text(text):
     original_clipboard_content = await save_clipboard()
     try:
         pyperclip.copy(text)
-        trigger_paste_with_pynput()
+        await trigger_paste_with_pynput()
     except Exception as e:
         log.warning("Error encoding text with pyperclip: %s", str(e))
     finally:

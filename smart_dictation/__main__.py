@@ -2,7 +2,7 @@ import asyncio
 import enum
 import pyaudio
 import numpy as np
-
+import typer
 import wave
 import structlog
 from pathlib import Path
@@ -15,6 +15,23 @@ from smart_dictation import sane_output
 SAMPLE_RATE = 16000
 SAMPLE_WIDTH = 2
 log = structlog.get_logger(__name__)
+
+
+def list_sound_devices():
+    p = pyaudio.PyAudio()
+    info = p.get_host_api_info_by_index(0)
+    numdevices = info.get("deviceCount")
+    for i in range(0, numdevices):
+        if (
+            p.get_device_info_by_host_api_device_index(0, i).get("maxInputChannels")
+        ) > 0:
+            print(
+                "Input Device id ",
+                i,
+                " - ",
+                p.get_device_info_by_host_api_device_index(0, i).get("name"),
+            )
+    p.terminate()
 
 
 def to_wave(samples, *, sample_rate, channels, sample_width):
@@ -95,10 +112,10 @@ class WhisperImpl(enum.Enum):
 class WhisperConfig(BaseSettings):
     whisper_model: str = Field(default="large-v3-turbo")
     whisper_impl: WhisperImpl = Field(default=WhisperImpl.cpp)
-    models_dir: Path = Field(default=Path(MODEL_DIR))
+    whisper_models_dir: Path = Field(default=Path(MODEL_DIR))
     n_threads: int = Field(default=6)
     hotkey: str = Field(default="<ctrl>+<alt>+<shift>+<cmd>")
-    model_config = SettingsConfigDict(env_prefix="sane_input_")
+    model_config = SettingsConfigDict(env_prefix="smart_dictation_")
     language: str = Field(default="")
 
 
@@ -106,15 +123,23 @@ config = WhisperConfig()
 
 
 class WhisperCppTranscriber:
-
     def __init__(self):
         pywhispercpp.model.logging = structlog.get_logger()
-        self.model = pywhispercpp.model.Model(
-            config.whisper_model,
-            models_dir=str(config.models_dir),
-            n_threads=config.n_threads,
-        )
+        self._model = None
         self.language = config.language
+
+    @property
+    def model(self):
+        if self._model is None:
+            self._model = pywhispercpp.model.Model(
+                config.whisper_model,
+                models_dir=str(config.whisper_models_dir),
+                n_threads=config.n_threads,
+            )
+        return self._model
+
+    def preload(self):
+        self.model
 
     async def __call__(self, audio_data: np.ndarray):
         segments = self.model.transcribe(audio_data, language=self.language)
@@ -141,10 +166,24 @@ async def dictate(key_released):
     await sane_output.paste_text(text)
 
 
-async def main():
+app = typer.Typer()
+
+
+@app.command()
+def list_devices():
+    list_sound_devices()
+
+
+async def start_dictation(device):
+    whisper_transcribe.preload()
     global_hotkeys = sane_output.AsyncGlobalHotKeys({config.hotkey: dictate})
     await global_hotkeys.run_forever()
 
 
+@app.command()
+def transcribe(device: str):
+    asyncio.run(start_dictation(device))
+
+
 if __name__ == "__main__":
-    asyncio.run(main())
+    app()
