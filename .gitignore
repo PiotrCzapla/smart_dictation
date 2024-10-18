@@ -1,0 +1,14 @@
+venv/
+.DS_Store
+*.pyc
+*.pyo
+*.pyd
+*.pyz
+*.pyw
+*.pyc
+*.pyo
+*.pyd
+*.pyz
+*.pyw
+__pycache__
+experiments
