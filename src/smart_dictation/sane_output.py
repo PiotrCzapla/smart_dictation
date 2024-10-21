@@ -76,7 +76,7 @@ class AsyncGlobalHotKeys(GlobalHotKeys):
 
     async def run_forever(self):
         """Start the global hotkeys listener asynchronously."""
-        with self as listner_thread:
+        with self:
             await asyncio.gather(*[h.in_main_loop() for h in self._hotkeys])
 
 

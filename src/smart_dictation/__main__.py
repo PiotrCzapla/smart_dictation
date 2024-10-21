@@ -8,7 +8,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 import pywhispercpp.constants
 from smart_dictation.app import start_listening, list_sound_devices
 from smart_dictation.local_whisper import WhisperCppTranscriber
-
+from smart_dictation.config import cfg
 
 app = typer.Typer()
 
@@ -19,8 +19,9 @@ def list_devices():
 
 
 @app.command()
-def listen(device: str):
-    asyncio.run(start_listening(device))
+def listen(device: int | None = None):
+    cfg.input_device_index = device
+    asyncio.run(start_listening())
 
 
 if __name__ == "__main__":

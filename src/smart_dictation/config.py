@@ -1,16 +1,9 @@
-import asyncio
 import enum
-import pyaudio
-import numpy as np
-import typer
-import wave
-import structlog
 from pathlib import Path
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 import pywhispercpp.model
 import pywhispercpp.constants
-from smart_dictation import sane_output
 
 # from pywhispercpp.constants import MODELS_DIR
 MODEL_DIR = pywhispercpp.constants.MODELS_DIR
@@ -31,6 +24,6 @@ class WhisperConfig(BaseSettings):
     hotkey: str = Field(default="<ctrl>+<alt>+<shift>+<cmd>")
     model_config = SettingsConfigDict(env_prefix="smart_dictation_")
     language: str = Field(default="")
-
+    input_device_index: int | None = Field(default=None)
 
 cfg = WhisperConfig()

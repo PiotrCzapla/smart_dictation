@@ -3,6 +3,8 @@ import numpy as np
 import pywhispercpp.model
 import structlog
 from smart_dictation.config import cfg
+from functools import cached_property
+
 
 def to_whisper_ndarray(frames, *, sample_rate, channels, sample_width):
     assert (sample_rate, channels, sample_width) == (16000, 1, 2), "16kHz 16bit mono"
@@ -15,18 +17,15 @@ def to_whisper_ndarray(frames, *, sample_rate, channels, sample_width):
 class WhisperCppTranscriber:
     def __init__(self):
         pywhispercpp.model.logging = structlog.get_logger()
-        self._model = None
         self.language = cfg.language
 
-    @property
+    @cached_property
     def model(self):
-        if self._model is None:
-            self._model = pywhispercpp.model.Model(
-                cfg.whisper_model,
-                models_dir=str(cfg.whisper_models_dir),
-                n_threads=cfg.n_threads,
-            )
-        return self._model
+        return pywhispercpp.model.Model(
+            cfg.whisper_model,
+            models_dir=str(cfg.whisper_models_dir),
+            n_threads=cfg.n_threads,
+        )
 
     def preload(self):
         self.model

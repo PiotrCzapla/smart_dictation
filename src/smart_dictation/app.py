@@ -1,5 +1,5 @@
 from smart_dictation import sane_output
-from smart_dictation.audio import get_sound_devices, record_audio
+from smart_dictation.audio import get_sound_devices, record_audio, get_device_info
 from smart_dictation.local_whisper import to_whisper_ndarray
 import structlog
 from smart_dictation.config import cfg, WhisperImpl
@@ -19,14 +19,17 @@ match (cfg.whisper_impl):
 
 
 async def dictate(key_released):
-    await log.ainfo("Recording")
-    wave = await record_audio(key_released, convert=to_whisper_ndarray)
+    device_info = get_device_info(cfg.input_device_index)
+    await log.ainfo("Recording, device: %s", device_info["name"])
+    wave = await record_audio(
+        key_released, convert=to_whisper_ndarray, device=cfg.input_device_index
+    )
     text = await transcribe(wave)
     await log.ainfo("Pasting: %s", text)
     await sane_output.paste_text(text)
 
 
-async def start_listening(device):
+async def start_listening():
     transcribe.preload()
     global_hotkeys = sane_output.AsyncGlobalHotKeys({cfg.hotkey: dictate})
     await global_hotkeys.run_forever()

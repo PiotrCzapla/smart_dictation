@@ -1,13 +1,8 @@
 import asyncio
-import enum
 import io
 import wave
-from pathlib import Path
 
 import pyaudio
-import structlog
-import typer
-from pydantic import Field
 
 from smart_dictation import sane_output
 
@@ -37,6 +32,7 @@ async def record_audio(
     sample_rate=SAMPLE_RATE,
     format=pyaudio.paInt16,
     convert=to_wave,
+    device=None,
 ):
     frames_per_buffer = 1024
     p = pyaudio.PyAudio()
@@ -46,6 +42,7 @@ async def record_audio(
         rate=sample_rate,
         frames_per_buffer=frames_per_buffer,
         input=True,
+        input_device_index=device,
     )
     try:
         frames = []
@@ -75,10 +72,17 @@ def get_sound_devices() -> list:
     p = pyaudio.PyAudio()
     devices = []
     info = p.get_host_api_info_by_index(0)
-    numdevices = info.get("deviceCount")
+    numdevices = int(info.get("deviceCount", 0))
     for i in range(numdevices):
         device_info = p.get_device_info_by_host_api_device_index(0, i)
-        if device_info.get("maxInputChannels") > 0:
-            devices.append((i, device_info.get("name")))
+        if int(device_info.get("maxInputChannels", 0)) > 0:
+            devices.append((device_info.get("index"), device_info.get("name")))
     p.terminate()
     return devices
+
+
+def get_device_info(device_index):
+    if device_index is None:
+        return {"name": "default"}
+    p = pyaudio.PyAudio()
+    return p.get_device_info_by_host_api_device_index(0, device_index)
