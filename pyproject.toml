@@ -16,6 +16,8 @@ dependencies = [
     "pyperclip>=1.9.0",
     "pydantic-settings>=2.5.2",
     "structlog>=24.4.0",
+    "numpy>=2.1.2,<3",
+    "pywhispercpp @ git+https://github.com/abdeladim-s/pywhispercpp.git@41545c8638f3a444bab26509738a70e3b02d18b2",
 ]
 
 [project.optional-dependencies]
@@ -28,12 +30,26 @@ dev = [
     "pyautogui>=0.9.54",
 ]
 
+[tool.setuptools]
+packages = {find = {where = ["src"], exclude = ["src.experiments*"]}}
+package-dir = {"" = "src"}
+
 [project.scripts]
-whisper = "smart_dictation:main"
+smart_dictation = "smart_dictation:main"
 
 [build-system]
-requires = ["pdm-pep517"]
-build-backend = "pdm.pep517.api"
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
 
-[tool.pdm]
-includes = []
+[tool.pixi.project]
+channels = ["conda-forge"]
+platforms = ["osx-arm64"]
+
+[tool.pixi.pypi-dependencies]
+smart_dictation = { path = ".", editable = true }
+
+[tool.pixi.environments]
+default = { solve-group = "default" }
+dev = { features = ["dev"], solve-group = "default" }
+
+[tool.pixi.tasks]

@@ -12,3 +12,8 @@ venv/
 *.pyw
 __pycache__
 experiments
+# pixi environments
+.pixi
+*.egg-info
+dist
+.venv
