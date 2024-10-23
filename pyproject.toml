@@ -22,14 +22,13 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "rumps>=0.4.0,<1.0.0",
-    "nltk>=3.9.1",
-    "pandas>=2.2.2",
-    "streamlit>=1.39.0",
-    "tqdm>=4.66.5",
-    "pyautogui>=0.9.54", 
     "pytest>=8.3.3,<9",
 ]
+
+[tool.pixi.dependencies]
+compilers = "*"
+cmake = "*"
+setuptools = "*"
 
 [tool.setuptools]
 packages = {find = {where = ["src"], exclude = ["src.experiments*"]}}
@@ -44,7 +43,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.pixi.project]
 channels = ["conda-forge"]
-platforms = ["osx-arm64"]
+platforms = ["osx-arm64", "win-64"]
 
 [tool.pixi.pypi-dependencies]
 smart_dictation = { path = ".", editable = true }

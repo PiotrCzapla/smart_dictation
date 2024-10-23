@@ -1,7 +1,6 @@
 import sys
 import asyncio
 import pyperclip
-from AppKit import NSPasteboard  # type: ignore
 from typing import Callable, Coroutine
 from pynput.keyboard import Key, HotKey, GlobalHotKeys, Controller
 import structlog
@@ -80,8 +79,9 @@ class AsyncGlobalHotKeys(GlobalHotKeys):
             await asyncio.gather(*[h.in_main_loop() for h in self._hotkeys])
 
 
-async def save_clipboard():
+async def macos_save_clipboard():
     """Saves the current clipboard content."""
+    from AppKit import NSPasteboard  # type: ignore
     paste_board = NSPasteboard.generalPasteboard()
     old_clipboard = {}
     try:
@@ -94,13 +94,14 @@ async def save_clipboard():
     return old_clipboard
 
 
-async def restore_clipboard(old_clipboard: dict, after: float = 0.5):
+async def macos_restore_clipboard(old_clipboard: dict, after: float = 0.5):
     """
     Restores the clipboard content after a delay.
 
     Args:
         after (float): Delay in seconds before restoring.
     """
+    from AppKit import NSPasteboard  # type: ignore
     if old_clipboard:
         await asyncio.sleep(after)
         paste_board = NSPasteboard.generalPasteboard()
@@ -110,6 +111,16 @@ async def restore_clipboard(old_clipboard: dict, after: float = 0.5):
                 paste_board.setData_forType_(data, t)
         except Exception as e:
             log.warning("Error restoring clipboard: %s", str(e))
+
+async def save_clipboard():
+    """Saves the current clipboard content."""
+    return {'text':pyperclip.paste()}
+
+
+async def restore_clipboard(old_clipboard: dict, after: float = 0.5):
+    """Restores the clipboard content, generic."""
+    await asyncio.sleep(after)
+    pyperclip.copy(old_clipboard['text'])  
 
 
 async def trigger_paste_with_pynput():
@@ -121,7 +132,6 @@ async def trigger_paste_with_pynput():
     await asyncio.sleep(0.01)
     keyboard.release("v")
     keyboard.release(command_key)
-
 
 async def paste_text(text):
     original_clipboard_content = await save_clipboard()
