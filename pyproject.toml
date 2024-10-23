@@ -12,7 +12,6 @@ dependencies = [
     "pyaudio>=0.2.13,<1.0.0",
     "pynput>=1.7.6,<2.0.0",
     "pydantic>=2.9.2",
-    "typer>=0.12.5",
     "pyperclip>=1.9.0",
     "pydantic-settings>=2.5.2",
     "structlog>=24.4.0",
@@ -23,36 +22,17 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=8.3.3,<9",
+    "pytest-asyncio>=0.24.0,<0.25",
 ]
-
-[tool.pixi.dependencies]
-compilers = "*"
-cmake = "*"
-setuptools = "*"
 
 [tool.setuptools]
 packages = {find = {where = ["src"], exclude = ["src.experiments*"]}}
 package-dir = {"" = "src"}
 
 [project.scripts]
-smart_dictation = "smart_dictation:main"
+smart_dictation = "smart_dictation:app.main"
 
 [build-system]
 requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
 
-[tool.pixi.project]
-channels = ["conda-forge"]
-platforms = ["osx-arm64", "win-64"]
-
-[tool.pixi.pypi-dependencies]
-smart_dictation = { path = ".", editable = true }
-
-[tool.pixi.environments]
-default = { solve-group = "default" }
-dev = { features = ["dev"], solve-group = "default" }
-
-[tool.pixi.tasks]
-
-[tool.pixi.feature.dev.dependencies]
-pytest-asyncio = ">=0.24.0,<0.25"

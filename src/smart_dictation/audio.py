@@ -4,7 +4,7 @@ import wave
 
 import pyaudio
 
-from smart_dictation import sane_output
+from smart_dictation import hotkeys
 
 SAMPLE_RATE = 16000
 SAMPLE_WIDTH = 2
@@ -24,6 +24,17 @@ def to_wave(samples, *, sample_rate, channels, sample_width):
 
 def infer_time(samples, *, sample_rate=SAMPLE_RATE, sample_width=SAMPLE_WIDTH):
     return len(samples) / sample_rate / sample_width
+
+
+def get_default_device() -> tuple[int, str]:
+    """Retrieve the default input sound device index."""
+    p = pyaudio.PyAudio()
+    try:
+        val = p.get_default_input_device_info()
+        return int(val["index"]), str(val["name"])
+    finally:
+        p.terminate()
+    return None, "default"
 
 
 async def record_audio(
@@ -60,7 +71,7 @@ async def record_audio(
                 sample_width=p.get_sample_size(format),
             )
         else:
-            raise sane_output.StopTask("Too short audio")
+            raise hotkeys.StopTask("Too short audio")
     finally:
         stream.stop_stream()
         stream.close()

@@ -17,3 +17,5 @@ experiments
 *.egg-info
 dist
 .venv
+build
+.pytest_cache

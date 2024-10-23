@@ -1,9 +1,10 @@
-import sys
 import asyncio
-import pyperclip
+import sys
 from typing import Callable, Coroutine
-from pynput.keyboard import Key, HotKey, GlobalHotKeys, Controller
+
+import pyperclip
 import structlog
+from pynput.keyboard import Controller, GlobalHotKeys, HotKey, Key
 
 log = structlog.get_logger(__name__)
 
@@ -79,66 +80,7 @@ class AsyncGlobalHotKeys(GlobalHotKeys):
             await asyncio.gather(*[h.in_main_loop() for h in self._hotkeys])
 
 
-async def macos_save_clipboard():
-    """Saves the current clipboard content."""
-    from AppKit import NSPasteboard  # type: ignore
-    paste_board = NSPasteboard.generalPasteboard()
-    old_clipboard = {}
-    try:
-        types = paste_board.types()
-        for t in types:
-            data = paste_board.dataForType_(t)
-            old_clipboard[t] = data
-    except Exception as e:
-        print(f"Error saving clipboard: {e}")
-    return old_clipboard
-
-
-async def macos_restore_clipboard(old_clipboard: dict, after: float = 0.5):
-    """
-    Restores the clipboard content after a delay.
-
-    Args:
-        after (float): Delay in seconds before restoring.
-    """
-    from AppKit import NSPasteboard  # type: ignore
-    if old_clipboard:
-        await asyncio.sleep(after)
-        paste_board = NSPasteboard.generalPasteboard()
-        paste_board.clearContents()
-        try:
-            for t, data in old_clipboard.items():
-                paste_board.setData_forType_(data, t)
-        except Exception as e:
-            log.warning("Error restoring clipboard: %s", str(e))
-
-async def save_clipboard():
-    """Saves the current clipboard content."""
-    return {'text':pyperclip.paste()}
-
-
-async def restore_clipboard(old_clipboard: dict, after: float = 0.5):
-    """Restores the clipboard content, generic."""
-    await asyncio.sleep(after)
-    pyperclip.copy(old_clipboard['text'])  
-
-
-async def trigger_paste_with_pynput():
-    """Trigger cmd+v to paste, it is visible faster than using osascript"""
-    command_key = Key.cmd if sys.platform == "darwin" else Key.ctrl
-    keyboard = Controller()
-    keyboard.press(command_key)
-    keyboard.press("v")
-    await asyncio.sleep(0.01)
-    keyboard.release("v")
-    keyboard.release(command_key)
-
-async def paste_text(text):
-    original_clipboard_content = await save_clipboard()
-    try:
-        pyperclip.copy(text)
-        await trigger_paste_with_pynput()
-    except Exception as e:
-        log.warning("Error encoding text with pyperclip: %s", str(e))
-    finally:
-        await restore_clipboard(original_clipboard_content)
+async def listen_for_hotkeys(hotkeys: dict[str, Callable[[asyncio.Event], Coroutine]]):
+    """Listen for hotkeys asynchronously."""
+    global_hotkeys = AsyncGlobalHotKeys(hotkeys)
+    await global_hotkeys.run_forever()
